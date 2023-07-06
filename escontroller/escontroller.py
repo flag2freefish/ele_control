@@ -341,11 +341,8 @@ def cal_new_stra(Pload, Pne, Pch, Pdis, Pre_load, Pre_ne, SOC, Pch_re, Pdis_re, 
     '''
     # 计数判断
     num = len(Pre_load)  # num时间点个数 真实数据的长度
-    print(num)
     if num == 0:
         return Pes, []
-    if num == 60:
-        print('Pass')
     x = [0]*num  # 新能源出力预测偏差判断因子, 设置最大值是1，由于数据出现异常情况，真实数据中晚上也会有光伏出力的情况
     y = [0]*num  # 负荷预测偏差判断因子, 设置最大值是1
     for i in range(0, num):
@@ -416,15 +413,15 @@ def post_ctrresult(data_timelist, userid):
         'Content-Type': "application/json",
         'cache-control': "no-cache"
     }
+    payload = {}
     for j in range(0, len(stamplist)):
-        payload = {}
         key = eqmnum + ':ai:' + userid
         payload[key] = {'v': str(data_timelist[j]),
                         't': mytoday + ' ' + stamplist[j]}
-        payload = json.dumps(payload)
+    payload = json.dumps(payload)
 
-        requests.request("POST", url0 + '/' + tsdb_user_set_ai, data=payload, headers=headers)
-        requests.request("POST", url0 + '/' + rtdb_user_set_all, data=payload, headers=headers)
+    requests.request("POST", url0 + '/' + tsdb_user_set_ai, data=payload, headers=headers)
+    requests.request("POST", url0 + '/' + rtdb_user_set_all, data=payload, headers=headers)
         # print('post done, timenum=', j)
 
 
@@ -602,9 +599,10 @@ def myfunc():
                        ne1_cor, ne2_cor, ne1_max_difference, ne2_max_difference],
                       my_end_inds, out_1_id_list[modelIndex])
         # 计算日前预测储能策略和两充两放储能策略的经济成本和碳排成本
-        N1_cost1_pre, N1_cost2_pre = env_sim(p_past_load1, p_past_ne1, c1, -1*pre_es1.clip(-500, 0), pre_es1.clip(0, 500))
-        N2_cost1_pre, N2_cost2_pre = env_sim(p_past_load2, p_past_ne2, c1, -1 * pre_es2.clip(-500, 0),
-                                       pre_es2.clip(0, 500))
+        N1_cost1_pre, N1_cost2_pre = env_sim(p_past_load1, p_past_ne1, c1, -1*np.array(pre_es1).clip(-500, 0),
+                                             np.array(pre_es1).clip(0, 500))
+        N2_cost1_pre, N2_cost2_pre = env_sim(p_past_load2, p_past_ne2, c1, -1 * np.array(pre_es2).clip(-500, 0),
+                                       np.array(pre_es2).clip(0, 500))
         sim_c, sim_stra = env_soc()
         N1_cost1_sim, N1_cost2_sim = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(sim_stra).clip(-500, 0),
                                        np.array(sim_stra).clip(0, 500))
@@ -618,9 +616,10 @@ def myfunc():
         if optObject == '1#储能':
             [P_Be_a, P_out_a] = start_func(pre_load1, pre_ne1, pre_es1, input_time_main, minute_div, SOC1, my_end_inds,
                        p_past_load1, p_past_ne1, p_past_es1, c1, Pres, Eres, B, optTarget)
+            #计算成本并post
             N1_cost1_opt, N1_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_a).clip(-500, 0),
                                                  np.array(P_Be_a).clip(0, 500))
-            post_result_1([N1_cost1_opt, N1_cost2_opt],
+            post_result_1([N1_cost1_opt-N1_cost1_sim, N1_cost2_opt-N1_cost2_sim, N1_cost1_opt, N1_cost2_opt],
                           my_end_inds, out_2_id_list[modelIndex][::2])
             st = time.time()
             post_ctrresult(P_Be_a, outid_list[modelIndex][0])
@@ -628,9 +627,10 @@ def myfunc():
         if optObject == '2#储能':
             [P_Be_b, P_out_b] = start_func(pre_load2, pre_pv2, pre_es2, input_time_main, minute_div, SOC2, my_end_inds,
                        p_past_load2, p_past_ne2, p_past_es2, c1, Pres, Eres, B, optTarget)
+            # 计算成本并post
             N2_cost1_opt, N2_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_b).clip(-500, 0),
                                                  np.array(P_Be_b).clip(0, 500))
-            post_result_1([N2_cost1_opt, N2_cost2_opt],
+            post_result_1([N2_cost1_opt-N2_cost1_sim, N2_cost2_opt-N2_cost2_sim, N2_cost1_opt, N2_cost2_opt],
                           my_end_inds, out_2_id_list[modelIndex][1::2])
             st = time.time()
             post_ctrresult(P_Be_b, outid_list[modelIndex][1])
@@ -640,11 +640,14 @@ def myfunc():
                        p_past_load1, p_past_ne1, p_past_es1, c1, Pres, Eres, B, optTarget)
             [P_Be_b, P_out_b] = start_func(pre_load2, pre_pv2, pre_es2, input_time_main, minute_div, SOC2, my_end_inds,
                        p_past_load2, p_past_ne2, p_past_es2, c1, Pres, Eres, B, optTarget)
+            # 计算成本并post
             N1_cost1_opt, N1_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_a).clip(-500, 0),
                                                  np.array(P_Be_a).clip(0, 500))
             N2_cost1_opt, N2_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_b).clip(-500, 0),
                                                  np.array(P_Be_b).clip(0, 500))
-            post_result_1([N1_cost1_opt, N2_cost1_opt, N1_cost2_opt, N2_cost2_opt],
+            post_result_1([N1_cost1_opt-N1_cost1_sim, N1_cost2_opt-N1_cost2_sim,
+                           N2_cost1_opt-N2_cost1_sim, N2_cost2_opt-N2_cost2_sim,
+                           N1_cost1_opt, N2_cost1_opt, N1_cost2_opt, N2_cost2_opt],
                           my_end_inds, out_2_id_list[modelIndex])
             st = time.time()
             post_ctrresult_all(P_Be_a, P_Be_b, outid_list[modelIndex][0], outid_list[modelIndex][1])
