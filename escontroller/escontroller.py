@@ -15,8 +15,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
 import sys
-from utils import get_sim_soc_stra, env_sim
-
+#TODO 碳排因子？
 run_mode = 'remot'
 if run_mode == 'remot':
     url0 = 'http://123.60.30.122:20930'
@@ -93,39 +92,77 @@ for i in range(8):
     str2 = 'ctr0' + str(10002 + 10000 * i)
     outid_list.append([str1, str2])
 
-# 当前时刻
-now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
-now_minute = int(now[-5:-3])
-now_sec = int(now[-2:])
-if now_minute < 15:
-    my_end = now[:-5] + '00:00'
-elif 15 < now_minute < 30:
-    my_end = now[:-5] + '15:00'
-elif 30 < now_minute < 45:
-    my_end = now[:-5] + '30:00'
-elif now_minute > 45:
-    my_end = now[:-5] + '45:00'
-else:
-    my_end = now
+out_1_id_list = list()
+'''
+1#M1总负荷预测精准度
+2#M1总负荷预测精准度
+1#M1总负荷预测最大误差
+2#M1总负荷预测最大误差
+1#M1光伏出力预测精准度
+2#M1光伏出力预测精准度
+1#M1光伏出力预测最大误差
+2#M1光伏出力预测最大误差
+'''
+for i in range(8):
+    str1 = 'ctr0' + str(10019 + 10000 * i)
+    str2 = 'ctr0' + str(10020 + 10000 * i)
+    str3 = 'ctr0' + str(10021 + 10000 * i)
+    str4 = 'ctr0' + str(10022 + 10000 * i)
+    str5 = 'ctr0' + str(10023 + 10000 * i)
+    str6 = 'ctr0' + str(10024 + 10000 * i)
+    str7 = 'ctr0' + str(10025 + 10000 * i)
+    str8 = 'ctr0' + str(10026 + 10000 * i)
+    out_1_id_list.append([str1, str2, str3, str4, str5, str6, str7, str8])
 
-# 当天
-today = date.today().strftime("%Y-%m-%d")
+out_2_id_list = list()
+'''
+1#储能控制器经济成本优化
+2#储能控制器经济成本优化
+1#储能控制器碳排成本优化
+2#储能控制器碳排成本优化
+1#M1储能控制器策略经济成本
+2#M1储能控制器策略经济成本
+1#M1储能控制器策略碳排成本
+2#M1储能控制器策略碳排成本
+'''
+for i in range(8):
+    str1 = 'ctr0' + str(10003 + 10000 * i)
+    str2 = 'ctr0' + str(10004 + 10000 * i)
+    str3 = 'ctr0' + str(10005 + 10000 * i)
+    str4 = 'ctr0' + str(10006 + 10000 * i)
+    str5 = 'ctr0' + str(10007 + 10000 * i)
+    str6 = 'ctr0' + str(10008 + 10000 * i)
+    str7 = 'ctr0' + str(10009 + 10000 * i)
+    str8 = 'ctr0' + str(10010 + 10000 * i)
+    out_2_id_list.append([str1, str2, str3, str4, str5, str6, str7, str8])
+
+out_3_id_list = list()
+'''
+1#M1日前预测储能策略经济成本
+2#M1日前预测储能策略经济成本
+1#M1日前预测储能策略碳排成本
+2#M1日前预测储能策略碳排成本
+1#M1两充两放经济成本
+2#M1两充两放经济成本
+1#M1两充两放碳排成本
+2#M1两充两放碳排成本
+'''
+for i in range(8):
+    str1 = 'ctr0' + str(10011 + 10000 * i)
+    str2 = 'ctr0' + str(10012 + 10000 * i)
+    str3 = 'ctr0' + str(10013 + 10000 * i)
+    str4 = 'ctr0' + str(10014 + 10000 * i)
+    str5 = 'ctr0' + str(10015 + 10000 * i)
+    str6 = 'ctr0' + str(10016 + 10000 * i)
+    str7 = 'ctr0' + str(10017 + 10000 * i)
+    str8 = 'ctr0' + str(10018 + 10000 * i)
+    out_3_id_list.append([str1, str2, str3, str4, str5, str6, str7, str8])
+
 # 处理时间标记
 hourpool = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
             '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
 minutepool = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
 minutepool2 = ['00', '15', '30', '45']
-
-my_end_inds = 0
-count = 0
-for i_h in range(0, len(hourpool)):
-    for j_m in range(0, len(minutepool2)):
-        if my_end[-8:-6] == hourpool[i_h] and my_end[-5:-3] == minutepool2[j_m]:
-            my_end_inds = count
-        else:
-            count += 1
-my_end_inds -= 1
-# print('my_end_inds', my_end_inds)
 
 timestamp_list = list()
 for hour in range(24):
@@ -143,9 +180,9 @@ for hour in range(24):
 
 
 #  获取日前预测曲线，输出为[[],[],[],[],[],[],[]]
-def get_today_pre(modelnum):
-    begin0 = today + ' 00:00:00'
-    end0 = today + ' 23:59:59'
+def get_today_pre(modelnum, input_time):
+    begin0 = input_time.strftime("%Y-%m-%d") + ' 00:00:00'
+    end0 = input_time.strftime("%Y-%m-%d") + ' 23:59:59'
     dura0 = '15m'
     eqm0 = 'eqm000000'
     idlist0 = preid_list[modelnum]
@@ -161,9 +198,10 @@ def get_soc_points():
     return soc1, soc2
 
 
-def get_today_real():
-    begin0 = today + ' 00:00:00'
-    end0 = my_end
+def get_today_real(input_time, minute_):
+    minute_now = input_time.minute // minute_ * minute_
+    end0 = input_time.replace(minute=minute_now).strftime("%Y-%m-%d %H:%M:%S")
+    begin0 = input_time.strftime("%Y-%m-%d") + ' 00:00:00'
     dura0 = '15m'
     # 储能1出力
     eqm1 = 'eqm002004'
@@ -196,24 +234,161 @@ def get_today_real():
     return [datas1[0], datas3[0], pne1_real, datas2[0], datas3[3], datas3[-1], datas4[0], datas5[0]]
 
 
-def get_dianliang():
+def get_dianliang(input_time, minute_):
+    #time_now = datetime.datetime.now()
+    minute_now = input_time.minute // minute_ * minute_
+    my_end = input_time.replace(minute=minute_now).strftime("%Y-%m-%d %H:%M:%S")
     id_shoudian = 'frm000014'
     id_goudian = 'frm000018'
     eqm0 = 'eqm000000'
-    begin0 = today + ' 00:00:00'
-    end0 = my_end
+    begin0 = input_time.strftime("%Y-%m-%d") + ' 00:00:00'
     dura0 = '15m'
-    datas = myinterface.get_tsdb_user_ai(begin0, end0, dura0, eqm0, [id_shoudian, id_goudian])
+    datas = myinterface.get_tsdb_user_ai(begin0, my_end, dura0, eqm0, [id_shoudian, id_goudian])
     if datas:
         return datas[0], datas[1]
     else:
         return [], []
 
+def controller_optimization1(x, y, Pre_ne, Pre_load, SOC, Eres, Pres, c1, Pch, Pdis, i):
+    '''
+    策略控制器，计算当前时刻下，储能充放电量
+    :param x: 负荷 预测值的偏差因子
+    :param y: 新能源出力 预测值的偏差因子
+    :param Pre_ne: 真实的新能源出力
+    :param Pre_load: 真实的负荷
+    :param SOC: 储能设备SOC
+    :param Eres: 储能放电最大值
+    :param Pres: 储能充电最大值
+    :param Pch: 预测储能设备充电值
+    :param Pdis: 预测储能设备放电值
+    :param i: 第i时刻
+    :return: 优化后第i时刻储能设备充放电策略
+    '''
+    # 当前偏差较大，通过该控制器重新计算策略
+    if abs(x[i] - y[i]) > 0.2:
+        if Pre_ne[i] >= Pre_load[i]:
+            if SOC[i]<0.9:
+                Pch_1 = Pre_ne[i] - Pre_load[i]
+                if c1[i] == min(c1):
+                    Pch_tmp = Pch[i] * (1 + x[i] - y[i]) - Pch_1
+                    Pdis_tmp = 0
+                else:
+                    Pch_tmp = Pch_1
+                    Pdis_tmp = 0
+            else:
+                Pch_tmp = 0
+                Pdis_tmp = 0
+        else:
+            if c1[i] != min(c1):  # 1.2.1 电价为高价、平段
+                if SOC[i] > 0.2:  # 1.2.1.1
+                    # 储能放电可以满足剩余负荷需求
+                    if Eres * (SOC[i] - 0.2) >= (Pre_load[i] - Pre_ne[i]) / 4:
+                        Pdis_tmp = Pre_load[i] - Pre_ne[i]
+                        Pch_tmp = 0
+                    else:  # 储能放电不能满足剩余负荷需求
+                        Pdis_tmp = Eres * (SOC[i] - 0.2) * 4
+                        Pch_tmp = 0
+                else:  # 1.2.1.2
+                    Pch_tmp = 0
+                    Pdis_tmp = 0
+            else:  # 1.2.2 电价为低谷段
+                if SOC[i] < 0.9 and Pch[i] > 0:
+                    Pch_tmp = max(Pch[i] * (1 + y[i] - x[i]), Pres)
+                    Pdis_tmp = 0
+                else:
+                    Pch_tmp = 0
+                    Pdis_tmp = 0
+        #充放电功率低于最大值
+        return min(Pdis_tmp, Pres, Eres * (SOC[i]-min(0.2, SOC[i]) )*4) - min(Pch_tmp, Pres, Eres * (max(0.9, SOC[i]) - SOC[i])*4)
+    else:
+        return min(Pdis[i], Eres * (SOC[i]-min(0.2, SOC[i]) )*4) - min(Pch[i], Eres * (max(0.9, SOC[i]) - SOC[i])*4)
+
+def update_soc(pb, soc, Eres):
+    soc.append(soc[-1]+(-1*pb/4/Eres))
+    return soc
+
+def env_soc(count=4):
+    a = [-250]*12*2 + [0]*12*8 + [250]*12*2 + [0]*12 + [-250] *12*2 + [0]*12*2 + [250] *12*2 +[0]*12*5
+
+    b = list(map(lambda x: (x/24)*100+1, range(24))) + [99]*12*8 \
+        + list(map(lambda x: (x/24)*100-1, range(24,0, -1))) + [1] * 12 \
+        + list(map(lambda x: (x/24)*100+1, range(24))) + [99] * 12*2 \
+        + list(map(lambda x: (x/24)*100-1, range(24,0, -1))) + [1] * 12*5
+    tmp_div = int(12/count)
+    return a[::tmp_div].copy(), b[::tmp_div].copy()
+
+def cal_new_stra(Pload, Pne, Pch, Pdis, Pre_load, Pre_ne, SOC, Pch_re, Pdis_re, c1, Pres, Eres, Pes, B,
+          opttarget, optinput):
+    '''
+    新策略条件判断
+    :param Pload: 预测负荷
+    :param Pne:  预测光伏出力
+    :param Pch: 预测储能充电策略
+    :param Pdis: 预测储能放电策略
+    :param Pre_load: 真实负荷
+    :param Pre_ne: 真实光伏出力
+    :param SOC: 储能SOC
+    :param Pch_re: 真实储能充电策略
+    :param Pdis_re: 真实储能放电策略
+    :param c1:  购电价格
+    :param Pres: 储能充放电最大功率
+    :param Eres: 储能设备最大容量
+    :param Pes:  预测储能策略
+    :param B:  储能放电最小参数
+    :param opttarget:  优化目标：成本最优、碳排最优
+    :param optinput:  重新计算优化任务下的输入
+    :return:  新的策略
+    '''
+    # 计数判断
+    num = len(Pre_load)  # num时间点个数 真实数据的长度
+    print(num)
+    if num == 0:
+        return Pes, []
+    if num == 60:
+        print('Pass')
+    x = [0]*num  # 新能源出力预测偏差判断因子, 设置最大值是1，由于数据出现异常情况，真实数据中晚上也会有光伏出力的情况
+    y = [0]*num  # 负荷预测偏差判断因子, 设置最大值是1
+    for i in range(0, num):
+        x[i] = min((Pre_ne[i] - Pne[i]) / (0.01+np.average(Pne[0:96])), 1)
+        x[i] = max(x[i], -1)
+        y[i] = min((Pre_load[i] - Pload[i]) / (0.01+np.average(Pload[0:96])), 1)
+        y[i] = max(y[i], -1)
+    # 计数标识
+    list_5 = list(map(lambda m, n: 1 if m > 0.5 or n > 0.5 else 0, x, y))
+    list_2 = list(map(lambda m, n: 1 if m > 0.2 or n > 0.2 else 0, x, y))
+    flag_opt = sum(list_5) >= 32 or sum(list_2) >= 20
+    P_Be = -1 * Pch_re + Pdis_re
+    # 首先取预测的策略作为当前策略，初始化值，会影响优化后的策略
+    P_Be = np.concatenate([P_Be[:num-1], Pes[num-1:96]])
+    # 当时间点数大于等于临界值，重新优化后执行优化策略，目前只是根据真实值拼接预测值，直接计算策略
+    #TODO 需要加入重新预测流程
+    if flag_opt:
+        Pes1, optOut_profit = optimization_main.optimize2(optinput, opttarget, 96)
+        # 当前优化点的策略重新赋值，是重新计算之后的策略
+        P_Be[num-1:96] = Pes1[num-1:96]
+        Pch_ = np.zeros([96])
+        Pdis_ = np.zeros([96])
+        for i in range(0, len(Pes1)):
+            if Pes1[i] >= 0:
+                Pdis_[i] = Pes1[i]
+            else:
+                Pch_[i] = -1*Pes1[i]
+    else:
+        Pch_ = Pch.copy()
+        Pdis_ = Pdis.copy()
+    # 执行控制器优化策略,对num-1位置的策略进行优化，当前位置，以15分钟为间隔， 0-15分钟是0分时刻， 15-30分钟是15分钟时刻，返回策略只有一个
+    P_Be_1 = controller_optimization1(x, y, Pre_ne, Pre_load, SOC, Eres, Pres, c1, Pch_, Pdis_, num-1)
+    # 将返回结果合并至策略中 TODO 放电策略修正
+    if P_Be_1 < 0 and P_Be_1 > -1*B*Pres:
+        P_Be[num - 1] = 0
+    else:
+        P_Be[num - 1] = P_Be_1
+    return P_Be, []
 
 # datalist1,datalist2:1#/2#储能优化控制策略，list类型，长度为96
 def post_result(datalist1, datalist2):
     eqmnum0 = 'eqm000000'
-    idlist0 = outid_list[0]
+    idlist0 = outid_list[0] # TODO 输出信息只有一个
     headers = {
         'Content-Type': "application/json",
         'cache-control': "no-cache"
@@ -230,318 +405,6 @@ def post_result(datalist1, datalist2):
         payload = json.dumps(payload)
         requests.request("POST", url0 + '/' + tsdb_user_set_ai, data=payload, headers=headers)
         requests.request("POST", url0 + '/' + rtdb_user_set_all, data=payload, headers=headers)
-
-
-# 定义决策函数
-def controller_optimization(x, y, Pre_ne, Pre_load, SOC, Eres, c1, Pres, Pch, Pdis, Pch_re, Pdis_re, Psell, Pbuy, i, B):
-    P_Be = 0
-    P_out = 0
-    if abs(x[i] - y[i]) > 0.2:  # 1
-        if Pre_ne[i] - Pre_load[i] > 0:  # 1.1、新能源出力大于负荷
-            if SOC[i] < 0.9:  # 1.1.1、余电全部为储能充电
-                if Eres * (0.9 - SOC[i]) < (Pre_ne[i] - Pre_load[i]) / 4:  # 1.1.1.1余电可以充满储能
-                    Pch_re[i] = Eres * (0.9 - SOC[i]) * 4
-                    if Pch_re[i] > Pres:  # 充电超过上限
-                        Pch_re[i] = Pres
-                    if Pch_re[i] < B * Pres:  # 充电低于下限
-                        Pch_re[i] = 0
-                    P_Be = - Pch_re[i]  # 储能放电策略
-                    Psell[i] = Pre_ne[i] - Pre_load[i] - Pch_re[i]
-                    P_out = - Psell[i]  # 电网购售电策略
-
-                if Eres * (0.9 - SOC[i]) > (Pre_ne[i] - Pre_load[i]) / 4:  # 1.1.1.2余电未能充满储能
-                    if c1[i] != min(c1):  # 电价为高峰、平段
-                        Pch_1 = Pre_ne[i] - Pre_load[i]  # 一次充电
-                        Pch_2 = 0  # 二次充电
-                        Pch_re[i] = Pch_1 + Pch_2
-                        if Pch_re[i] > Pres:
-                            Pch_re[i] = Pres
-                        if Pch_re[i] < B * Pres:
-                            Pch_re[i] = 0
-                        Psell[i] = Pre_ne[i] - Pre_load[i] - Pch_re[i]
-                        Pbuy[i] = 0
-                        P_Be = - Pch_re[i]  # 储能放电策略
-                        P_out = Pbuy[i] - Psell[i]  # 电网购售电策略
-
-                    if c1[i] == min(c1):  # 电价为低谷段
-                        if Pch_re[i] * (1 + x[i] - y[i]) - (Pre_ne[i] - Pre_load[i]) > 0:  # 储能预测充电量大于新能源为储能充电量
-                            Pch_1 = Pre_ne[i] - Pre_load[i]
-                            Pch_2 = Pch_re[i] * (1 + x[i] - y[i]) - Pch_1
-                            Pch_re[i] = Pch_1 + Pch_2
-                            if Pch_re[i] > Pres:
-                                Pch_re[i] = Pres
-                                Psell[i] = Pre_ne[i] - Pre_load[i] - Pch_re[i]
-                                Pbuy[i] = 0
-                            if Pch_re[i] < B * Pres:
-                                Pch_re[i] = 0
-                                Psell[i] = 0
-                                Pbuy[i] = Pre_ne[i] - Pre_load[i]
-                        if Pch_re[i] * (1 + x[i] - y[i]) - (Pre_ne[i] - Pre_load[i]) < 0:  # 储能预测充电量小于新能源为储能充电量
-                            Pch_1 = Pch_re[i] * (1 + x[i] - y[i])
-                            Pch_2 = 0
-                            if Pch_re[i] > Pres:
-                                Pch_re[i] = Pres
-                            if Pch_re[i] < B * Pres:
-                                Pch_re[i] = 0
-                            Psell[i] = Pre_ne[i] - Pre_load[i] - Pch_re[i]
-                            Pbuy[i] = 0
-                            P_Be = - Pch_re[i]  # 储能放电策略
-                            P_out = Pbuy[i] - Psell[i]  # 电网购售电策略
-
-            if SOC[i] >= 0.9:  # 1.1.2 余电全部上网
-                Psell[i] = Pre_ne[i] - Pre_load[i]
-                P_Be = Pdis_re[i] = Pch_re[i] = 0  # 储能策略
-                P_out = -Psell[i]  # 电网策略
-
-        if Pre_ne[i] - Pre_load[i] < 0:  # 1.2、新能源出力小于负荷
-            if c1[i] != min(c1):  # 1.2.1 电价为高价、平段
-                if SOC[i] > 0.2:  # 1.2.1.1
-                    if Eres * (SOC[i] - 0.2) >= (Pre_load[i] - Pre_ne[i]) / 4:  # 储能放电可以满足剩余负荷需求
-                        P_Be = Pre_load[i] - Pre_ne[i]
-                        P_out = 0
-                    else:  # 储能放电不能满足剩余负荷需求
-                        Pdis_re[i] = Eres * (SOC[i] - 0.2) * 4
-                        P_Be = Pdis_re[i]  # 储能策略
-                        if Pch_re[i] > Pres:  # 充电超过上限
-                            Pch_re[i] = Pres
-                        if Pch_re[i] < B * Pres:  # 充电低于下限
-                            Pch_re[i] = 0
-                        Pbuy[i] = Pre_load[i] - Pre_ne[i] - P_Be
-                        P_out = Pbuy[i]  # 电网策略
-                if SOC[i] <= 0.2:  # 1.2.1.2
-                    Pbuy[i] = Pre_load[i] - Pre_ne[i]
-                    P_Be = 0
-                    P_out = Pbuy[i]
-
-            if c1[i] == min(c1):  # 1.2.2 电价为低谷段
-                Pbuy_1 = Pre_load[i] - Pre_ne[i]
-                if SOC[i] < 0.9:
-                    if Pch_re[i] > 0:
-                        Pch_re[i] = Pch_re[i] * (1 + y[i] - x[i])
-                        Pbuy_2 = Pch_re[i]
-                        Pbuy[i] = Pbuy_1 + Pbuy_2
-                        P_Be = -Pch_re[i]
-                        P_out = Pbuy[i]
-                    else:
-                        P_Be = Pdis_re[i] = Pch_re[i] = 0
-                        Pbuy[i] = Pbuy_1
-                        P_out = Pbuy[i]
-    else:
-        Pch_re[i] = Pch[i]
-        Pdis_re[i] = Pdis[i]
-        P_Be = Pdis_re[i] - Pch_re[i]
-        Pbuy[i] = Pre_load[i] + Pch_re[i] + Psell[i] - Pre_ne[i] - Pdis_re[i]
-        P_out = Pbuy[i] - Psell[i]
-    return (P_Be, P_out)
-
-
-def cal_a(Pload, Pne, Pch, Pdis, Pre_load, Pre_ne, SOC, Pch_re, Pdis_re, Psell, Pbuy, c1, Pres, Eres, Pes, B,
-          opttarget, optinput):
-    # 计数判断
-    num = len(Pre_load)  # num时间点个数
-    x = [0]*num  # 新能源出力预测偏差判断因子
-    y = [0]*num   # 负荷预测偏差判断因子
-    for i in range(0, num):
-        x[i] = (Pre_ne[i] - Pne[i]) / (0.001+np.average(Pne[0:96]))
-        y[i] = (Pre_load[i] - Pload[i]) / (0.001+np.average(Pload[0:96]))
-    # 计数标识
-    # 得到N_1和N_2值 最小值为重新优化的计数点
-    count_1 = 0  # 计数标识1
-    count_2 = 0  # 计数标识2
-    for i in range(0, num):
-        if abs(x[i]) > 0.5 or abs(y[i]) > 0.5:
-            count_1 += 1
-            if count_1 == 20:
-                N_1 = i - 1
-        if count_1 < 20:
-            N_1 = num + 1
-        if abs(x[i]) > 0.2 or abs(y[i]) > 0.2:
-            count_2 += 1
-            if count_2 == 32:
-                N_2 = i - 1
-        if count_2 < 32:
-            N_2 = num + 1
-
-    # 当计数标识达到第一次临界值后，重新开始计数
-    if min(count_1, count_2) >= min(N_1, N_2):
-        count_1_re = 0  # 计数标识1
-        count_2_re = 0  # 计数标识1
-        for i in range(min(N_1, N_2), num):
-            if abs(x[i]) > 0.5 or abs(y[i]) > 0.5:
-                count_1_re += 1
-                if count_1_re == 20:
-                    N_1_re = i - 1
-            if count_1_re < 20:
-                N_1_re = num + 1
-            if abs(x[i]) > 0.2 or abs(y[i]) > 0.2:
-                count_2_re += 1
-                if count_2_re == 32:
-                    N_2_re = i - 1
-            if count_2_re < 32:
-                N_2_re = num + 1
-    # 情况1
-    if min(count_1, count_2) < min(N_1, N_2):  # 当时间点数小于重新优化临街值时，执行优化策略
-        for i in range(0, num):
-            P_Be = np.empty([96])
-            P_out = np.empty([num])
-            [P_Be_1, P_out_1] = controller_optimization(x, y, Pre_ne, Pre_load, SOC, Eres, c1, Pres, Pch_re,
-                                                        Pdis_re, Pch, Pdis,  Psell, Pbuy, i, B)  # 执行控制器优化策略
-            P_Be[i] = P_Be_1
-            P_out[i] = P_out_1
-        P_Be[num:96] = Pes[num:96]
-
-    if min(count_1, count_2) >= min(N_1, N_2):  # 当时间点数大于等于临界值，重新优化后执行优化策略
-        P_Be = [0]*96
-        P_out = [0]*num
-        for i in range(0, min(N_1, N_2)):  # 对于时间点数小于临界值的点数 ，执行优化策略
-            [P_Be_1, P_out_1] = controller_optimization(x, y, Pre_ne, Pre_load, SOC, Eres, c1, Pres, Pch_re,
-                                                        Pdis_re, Pch, Pdis,  Psell, Pbuy, i, B)  # 执行控制器优化策略
-            P_Be[i] = P_Be_1
-            P_out[i] = P_out_1
-        # 当时间点数到达临界值，重新预测当前时间点后24小时的预测曲线，进行重新优化（当前选择成本最优为目标进行优化）
-        # ---------------------------------
-        # 新的输入参数定义
-        # (Pload, Pne, Pch, Pdis, Pre_load, Pre_ne, SOC, Pch_re, Pdis_re, Psell, Pbuy, c1, Pres, Eres, Pes, B)
-        # 需重新定义输入：Pload（num）,Pne（num） ,c1（96）  重新拼接96          其余外部数据输入：c2,B,SOC0,Pres,Eres
-        # Pload_re =
-        # Pne_re =
-        c1_re = np.zeros([96])  # 电价
-        c1_re[0:96 - num] = c1[num:96]
-        c1_re[96 - num:96] = c1[0:num]
-
-        Pes1, optOut_profitA = optimization_main.optimize1(optinput, opttarget, 96)
-        print('Pes1', len(Pes1))
-
-        Pch1 = np.zeros([96])
-        Pdis1 = np.zeros([96])
-        for i in range(0, len(Pes1)):
-            if Pes1[i] >= 0:
-                Pdis1[i] = Pes1[i]
-            else:
-                Pch1[i] = Pes1[i]
-        Pload1 = optinput[0]
-        Pne1 = optinput[1]
-
-        # ---------------------------------
-        # #输出重新优化后当日的一个运行优化曲线。
-        # P_Be_re = np.empty([0,96])
-        # P_out_re = np.empty([0, 96])
-        # P_Be_re[0:min(N_1, N_2)] = P_Be[0:min(N_1, N_2)]
-        # P_Be_re[min(N_1, N_2):96] =P_Be_re[0:96-min(N_1, N_2)]
-        # P_out_re[0:min(N_1, N_2)] = P_out[0:min(N_1, N_2)]
-        # P_out_re[min(N_1, N_2):96] = P_out_re[0:96-min(N_1, N_2)]
-        # 重新计算临界值及后续节点
-        for i in range(min(N_1, N_2), num):
-            [P_Be_opt, P_out_opt] = controller_optimization(x, y, Pne1, Pload1, SOC, Eres, c1, Pres, Pch_re, Pdis_re,
-                                                            Pch1, Pdis1, Psell, Pbuy, i, B)
-            P_Be[i] = P_Be_opt
-            P_out[i] = P_out_opt
-        P_Be[num:96] = Pes1[0:96 - num]
-    return P_Be, P_out
-
-
-def cal_b(Pload, Pne, Pch, Pdis, Pre_load, Pre_ne, SOC, Pch_re, Pdis_re, Psell, Pbuy, c1, Pres, Eres, Pes, B,
-          opttarget, optinput):
-    # 计数判断
-    num = len(Pre_load)  # num时间点个数
-    x = np.empty([num])  # 新能源出力预测偏差判断因子
-    y = np.empty([num])  # 负荷预测偏差判断因子
-    for i in range(0, num):
-        x[i] = (Pre_ne[i] - Pne[i]) / np.average(Pne[0:96])
-        y[i] = (Pre_load[i] - Pload[i]) / np.average(Pload[0:96])
-    # 计数标识
-    # 得到N_1和N_2值 最小值为重新优化的计数点
-    count_1 = 0  # 计数标识1
-    count_2 = 0  # 计数标识2
-    for i in range(0, num):
-        if abs(x[i]) > 0.5 or abs(y[i]) > 0.5:
-            count_1 += 1
-            if count_1 == 20:
-                N_1 = i - 1
-        if count_1 < 20:
-            N_1 = num + 1
-        if abs(x[i]) > 0.2 or abs(y[i]) > 0.2:
-            count_2 += 1
-            if count_2 == 32:
-                N_2 = i - 1
-        if count_2 < 32:
-            N_2 = num + 1
-
-    # 当计数标识达到第一次临界值后，重新开始计数
-    if min(count_1, count_2) >= min(N_1, N_2):
-        count_1_re = 0  # 计数标识1
-        count_2_re = 0  # 计数标识1
-        for i in range(min(N_1, N_2), num):
-            if abs(x[i]) > 0.5 or abs(y[i]) > 0.5:
-                count_1_re += 1
-                if count_1_re == 20:
-                    N_1_re = i - 1
-            if count_1_re < 20:
-                N_1_re = num + 1
-            if abs(x[i]) > 0.2 or abs(y[i]) > 0.2:
-                count_2_re += 1
-                if count_2_re == 32:
-                    N_2_re = i - 1
-            if count_2_re < 32:
-                N_2_re = num + 1
-    # 情况1
-    if min(count_1, count_2) < min(N_1, N_2):  # 当时间点数小于重新优化临街值时，执行优化策略
-        for i in range(0, num):
-            P_Be = np.empty([96])
-            P_out = np.empty([num])
-            [P_Be_1, P_out_1] = controller_optimization(x, y, Pre_ne, Pre_load, SOC, Eres, c1, Pres, Pch, Pdis, Pch_re,
-                                                        Pdis_re, Psell, Pbuy, i, B)  # 执行控制器优化策略
-            P_Be[i] = P_Be_1
-            P_out[i] = P_out_1
-        P_Be[num:96] = Pes[num:96]
-
-    if min(count_1, count_2) >= min(N_1, N_2):  # 当时间点数大于等于临界值，重新优化后执行优化策略
-        P_Be = np.empty([96])
-        P_out = np.empty([num])
-        for i in range(0, min(N_1, N_2)):  # 对于时间点数小于临界值的点数 ，执行优化策略
-            [P_Be_1, P_out_1] = controller_optimization(x, y, Pre_ne, Pre_load, SOC, Eres, c1, Pres, Pch, Pdis, Pch_re,
-                                                        Pdis_re, Psell, Pbuy, i, B)  # 执行控制器优化策略
-            P_Be[i] = P_Be_1
-            P_out[i] = P_out_1
-        # 当时间点数到达临界值，重新预测当前时间点后24小时的预测曲线，进行重新优化（当前选择成本最优为目标进行优化）
-        # ---------------------------------
-        # 新的输入参数定义
-        # (Pload, Pne, Pch, Pdis, Pre_load, Pre_ne, SOC, Pch_re, Pdis_re, Psell, Pbuy, c1, Pres, Eres, Pes, B)
-        # 需重新定义输入：Pload（num）,Pne（num） ,c1（96）  重新拼接96          其余外部数据输入：c2,B,SOC0,Pres,Eres
-        # Pload_re =
-        # Pne_re =
-        c1_re = np.zeros([96])  # 电价
-        c1_re[0:96 - num] = c1[num:96]
-        c1_re[96 - num:96] = c1[0:num]
-
-        Pes1, optOut_profit = optimization_main.optimize2(optinput, opttarget, 96)
-        Pch1 = np.zeros([96])
-        Pdis1 = np.zeros([96])
-        for i in range(0, len(Pes1)):
-            if Pes1[i] >= 0:
-                Pdis1[i] = Pes1[i]
-            else:
-                Pch1[i] = Pes1[i]
-        Pload1 = optinput[0]
-        Pne1 = optinput[1]
-
-        # ---------------------------------
-        # #输出重新优化后当日的一个运行优化曲线。
-        # P_Be_re = np.empty([0,96])
-        # P_out_re = np.empty([0, 96])
-        # P_Be_re[0:min(N_1, N_2)] = P_Be[0:min(N_1, N_2)]
-        # P_Be_re[min(N_1, N_2):96] =P_Be_re[0:96-min(N_1, N_2)]
-        # P_out_re[0:min(N_1, N_2)] = P_out[0:min(N_1, N_2)]
-        # P_out_re[min(N_1, N_2):96] = P_out_re[0:96-min(N_1, N_2)]
-        # 重新计算临界值及后续节点
-        for i in range(min(N_1, N_2), num):
-            [P_Be_opt, P_out_opt] = controller_optimization(x, y, Pne1, Pload1, SOC, Eres, c1, Pres, Pch1, Pdis1,
-                                                            Pch_re, Pdis_re, Psell, Pbuy, i, B)
-            P_Be[i] = P_Be_opt
-            P_out[i] = P_out_opt
-        P_Be[num:96] = Pes1[0:96 - num]
-    return P_Be, P_out
-
 
 def post_ctrresult(data_timelist, userid):
     # print(data_timelist)
@@ -566,46 +429,117 @@ def post_ctrresult(data_timelist, userid):
 
 
 def post_ctrresult_all(data_timelist1, data_timelist2, userid1, userid2):
-    # print(data_timelist1)
-    # print(data_timelist2)
-    eqmnum = 'eqm000000'
-    mytoday = date.today().strftime("%Y-%m-%d")
-    stamplist = timestamp_list96
+    post_ctrresult(data_timelist1, userid1)
+    post_ctrresult(data_timelist2, userid2)
 
+def post_result_1(datalist1, end_index, idlist0):
+    '''
+    将当前时刻下的结果post到数据库中
+    :param datalist1: 当前时刻下各区域光伏、负荷的准确率和最大误差, 优化前后的成本提升
+    :param end_index: 当前时刻的index
+    :return: None
+    '''
+    eqmnum0 = 'eqm000000'
+    mytoday = date.today().strftime("%Y-%m-%d")
     headers = {
         'Content-Type': "application/json",
         'cache-control': "no-cache"
     }
-    for j in range(0, len(stamplist)):
-        payload = {}
-        key1 = eqmnum + ':ai:' + userid1
-        payload[key1] = {'v': str(data_timelist1[j]),
-                         't': mytoday + ' ' + stamplist[j]}
-        key2 = eqmnum + ':ai:' + userid2
-        payload[key2] = {'v': str(data_timelist2[j]),
-                         't': mytoday + ' ' + stamplist[j]}
-        payload = json.dumps(payload)
+    payload = {}
+    for inds in range(len(datalist1)):
+        key1 = eqmnum0 + ':ai:' + idlist0[inds]
+        payload[key1] = {'v': str(datalist1[inds]),
+                         't': mytoday + ' ' + timestamp_list96[end_index]}
+    payload = json.dumps(payload)
+    requests.request("POST", url0 + '/' + tsdb_user_set_ai, data=payload, headers=headers)
+    requests.request("POST", url0 + '/' + rtdb_user_set_all, data=payload, headers=headers)
 
-        requests.request("POST", url0 + '/' + tsdb_user_set_ai, data=payload, headers=headers)
-        requests.request("POST", url0 + '/' + rtdb_user_set_all, data=payload, headers=headers)
+def start_func(pre_load, pre_ne, pre_es, input_time_main, minute_div, SOC, my_end_inds, p_past_load,
+               p_past_ne, p_past_es, c1, Pres, Eres, B, optTarget):
+    '''
+    获取策略的输入值，实际购售电量没用到
+    :param pre_load: 预测负荷
+    :param pre_ne: 预测光伏出力
+    :param pre_es: 预测策略
+    :param input_time_main: 当前时刻
+    :param minute_div: 时间间隔
+    :param SOC: 储能设备SOC
+    :param my_end_inds: 当前时刻index
+    :param p_past_load: 真实负荷
+    :param p_past_ne: 真实光伏出力
+    :param p_past_es: 真实策略
+    :param c1: 购电价格
+    :param Pres: 储能充放电功率
+    :param Eres: 储能最大容量
+    :param B: 调正系数
+    :param optTarget: 策略目标：成本最优、碳排最优
+    :return: 最优策略
+    '''
+    Pch_b = -1*np.clip(pre_es, -500, 0)
+    Pdis_b = np.clip(pre_es, 0, 500)
 
+    # -------------------------------已调整----------------------------------------
+    p_past_load = np.array(p_past_load)  # 实际负荷出力数据--采集输入
+    p_past_ne = np.array(p_past_ne)  # 实际新能源出力数据--采集输入
+
+    # TODO 实际购售电量，没有用到
+    e_past_sell, e_past_buy = get_dianliang(input_time_main, minute_div)
+    e_past_sell = np.array(e_past_sell)
+    e_past_buy = np.array(e_past_buy)
+    # -------------------------------已调整----------------------------------------
+    Pch_re_b = -1*np.clip(p_past_es, -500, 0)
+    Pdis_re_b = np.clip(p_past_es, 0, 500)
+
+    #TODO 目前是将实际数据和之前预测的数据结合，输入策略模型中计算控制策略，后续需要改成重新预测load和power的值，再输入进行预测
+    loadB_Input = np.concatenate([p_past_load[:my_end_inds], pre_load[my_end_inds:]])
+    powerB_Input = np.concatenate([p_past_ne[:my_end_inds], pre_ne[my_end_inds:]])
+
+    optInputB = [loadB_Input, powerB_Input, SOC[0] / 100]
+    [P_Be_b, P_out_b] = cal_new_stra(pre_load, pre_ne, Pch_b, Pdis_b, p_past_load, p_past_ne, list(map(lambda x: x/100, SOC)),
+                                     Pch_re_b, Pdis_re_b, c1, Pres, Eres, pre_es, B,
+                                     optTarget, optInputB)
+    return [P_Be_b, P_out_b]
+
+def env_sim(realload:list, realne:list, power_charge_cost:list, charge:list, discharge:list, Price_sold=0.3, count=4, qp=0.604):
+    '''
+    根据真实的负荷、出力、电价，根据不同的充放电策略，输出经济成本和碳排成本
+    :param realload: 真实的负荷
+    :param realne:  真实的光伏出力
+    :param power_charge_cost: 电价购买
+    :param charge: 储能充电策略
+    :param discharge: 储能放电策略
+    :return:
+    '''
+    buy_list = list(map(lambda x, y, m, n: 0 if (x + m) - (y + n) < 0 else (x + m) - (y + n),  realload, realne, charge, discharge))
+    sell_list = list(map(lambda x, y, m, n: 0 if (x + m) - (y + n) < 0 else (x + m) - (y + n),  realne, realload, discharge, charge))
+    z1 = sum(list(map(lambda x, y: x*y,  buy_list, power_charge_cost)))/count
+    z2 = sum(sell_list) * Price_sold / count
+    return z1 - z2, qp * np.sum(buy_list) / count
 
 def myfunc():
+    '''
+    读取数据，在不同模式下计算最优策略，并post到数据库
+    :return: None
+    '''
     logger.info('本轮计算开始')
     sttime = time.time()
+    input_time_main = datetime.datetime.now()
+    count = 4
+    minute_div = 60//count
+
     # 获取真实数据
-    [p_past_es1, p_past_load1, p_past_ne1, p_past_es2, p_past_load2, p_past_ne2, soc1_past,
-     soc2_past] = get_today_real()
+    my_end_inds = input_time_main.hour*count + input_time_main.minute//minute_div
+    # TODO 接口有问题， begin:'2023-06-23 00:00:00' end:'2023-06-23 00:01:00' 获取数据条数为0，秒数为0，获取数据计数少1
+    # 获取真实数据，当前天0点到当前时刻的数据，时间间隔为15分钟
+    [p_past_es1, p_past_load1, p_past_ne1, p_past_es2, p_past_load2, p_past_ne2, SOC1,
+     SOC2] = get_today_real(input_time_main, minute_div)
     # pastdata = [p_past_es1, p_past_load1, p_past_ne1, p_past_es2, p_past_load2, p_past_ne2, soc1_past, soc2_past]
     # for i in range(0, len(pastdata)):
     #     print(i, len(pastdata[i]))
     modelparas = optimization_main.model_define()
     model_amount = modelparas[1]
-    # SOC1 = soc1_past
-    # SOC2 = soc2_past
-    p_past_es1, SOC1 = get_sim_soc_stra(datetime.datetime.now())
-    p_past_es2, SOC2 = get_sim_soc_stra(datetime.datetime.now())
     # print(model_amount)
+    # TODO 模型参数输入
     for modelIndex in range(0, model_amount):
         print('modelnum=', modelIndex)
         begintime = time.time()
@@ -619,237 +553,102 @@ def myfunc():
         # print('运行优化模型参数加载用时=', time.time() - begintime)
         if optTarget == '' or optObject == '':
             continue
-        else:
-            '''获取该模型下的输入量'''
-            # 外部输入量
-            c1 = np.array([0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
-                           0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
-                           0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
-                           0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
-                           1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439,
-                           1.1439, 1.1439, 1.1439, 1.1439, 0.6652, 0.6652, 0.6652, 0.6652,
-                           0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652,
-                           0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652,
-                           0.6652, 0.6652, 0.6652, 0.6652, 1.1439, 1.1439, 1.1439, 1.1439,
-                           1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439,
-                           1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439,
-                           0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652])
-            Pres = 250
-            Eres = 500
-            B = 0.1
-            # '''# 1#、2#储能SOC实时值'''
-            # SOC1, SOC2 = get_soc_points()
-            # if SOC1 > 100:
-            #     SOC1 = 100
-            # if SOC2 > 100:
-            #     SOC2 = 100
+        '''获取该模型下的输入量'''
+        # 外部输入量
+        c1 = np.array([0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
+                       0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
+                       0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
+                       0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784, 0.2784,
+                       1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439,
+                       1.1439, 1.1439, 1.1439, 1.1439, 0.6652, 0.6652, 0.6652, 0.6652,
+                       0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652,
+                       0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652,
+                       0.6652, 0.6652, 0.6652, 0.6652, 1.1439, 1.1439, 1.1439, 1.1439,
+                       1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439,
+                       1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439, 1.1439,
+                       0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652, 0.6652])
+        Pres = 250
+        Eres = 500
+        B = 0.1
+        # '''# 1#、2#储能SOC实时值'''
+        # SOC1, SOC2 = get_soc_points()
+        # if SOC1 > 100:
+        #     SOC1 = 100
+        # if SOC2 > 100:
+        #     SOC2 = 100
+        # 获取预测数据
+        predatas = get_today_pre(modelIndex, input_time_main)
+        # 以下分别为1区预测负荷、光伏出力、风机出力、储能功率（正为放电、负为充电），均为list类型，长度96
+        pre_load1 = predatas[0]
+        pre_pv1 = predatas[1]
+        pre_wind1 = predatas[2]
+        pre_es1 = predatas[3]
+        pre_ne1 = optimization_main.myplusfunc([pre_pv1, pre_wind1])
+        # 以下分别为2区预测负荷、光伏出力、储能功率（正为放电、负为充电），均为list类型，长度96
+        pre_load2 = predatas[4]
+        pre_pv2 = predatas[5]
+        pre_es2 = predatas[6]
+        # 计算真实值和预测值的差值，并post
+        def cal_correct_rate(real_list, pre_list):
+            len_list = len(real_list)
+            tmp_list = list(map(lambda x, y: np.abs(x-y), real_list, pre_list[:len_list]))
+            list_2 = list(map(lambda m: 1 if m/np.average(pre_list) > 0.2 else 0, tmp_list))
+            return sum(list_2)/len_list*100, max(tmp_list)
+        load1_cor, load1_max_difference = cal_correct_rate(p_past_load1, pre_load1)
+        load2_cor, load2_max_difference = cal_correct_rate(p_past_load2, pre_load2)
+        ne1_cor, ne1_max_difference = cal_correct_rate(p_past_ne1, pre_pv1)
+        ne2_cor, ne2_max_difference = cal_correct_rate(p_past_ne2, pre_pv2)
+        post_result_1([load1_cor, load2_cor, load1_max_difference, load2_max_difference,
+                       ne1_cor, ne2_cor, ne1_max_difference, ne2_max_difference],
+                      my_end_inds, out_1_id_list[modelIndex])
+        # 计算日前预测储能策略和两充两放储能策略的经济成本和碳排成本
+        N1_cost1_pre, N1_cost2_pre = env_sim(p_past_load1, p_past_ne1, c1, -1*pre_es1.clip(-500, 0), pre_es1.clip(0, 500))
+        N2_cost1_pre, N2_cost2_pre = env_sim(p_past_load2, p_past_ne2, c1, -1 * pre_es2.clip(-500, 0),
+                                       pre_es2.clip(0, 500))
+        sim_c, sim_stra = env_soc()
+        N1_cost1_sim, N1_cost2_sim = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(sim_stra).clip(-500, 0),
+                                       np.array(sim_stra).clip(0, 500))
+        N2_cost1_sim, N2_cost2_sim = env_sim(p_past_load2, p_past_ne2, c1, -1 * np.array(sim_stra).clip(-500, 0),
+                                       np.array(sim_stra).clip(0, 500))
+        post_result_1([N1_cost1_pre, N2_cost1_pre, N1_cost2_pre, N2_cost2_pre,
+                       N1_cost1_sim, N2_cost1_sim, N1_cost2_sim, N2_cost2_sim],
+                      my_end_inds, out_3_id_list[modelIndex])
 
-            if optObject == '1#储能':
-                '''预测数据'''
-                # 获取预测数据
-                predatas = get_today_pre(modelIndex)
-                # 以下分别为1区预测负荷、光伏出力、风机出力、储能功率（正为放电、负为充电），均为list类型，长度96
-                pre_load1 = predatas[0]
-                pre_pv1 = predatas[1]
-                pre_wind1 = predatas[2]
-                pre_es1 = predatas[3]
-                pre_ne1 = optimization_main.myplusfunc([pre_pv1, pre_wind1])
-
-                '''# 分区1输入'''
-                Pload_a = pre_load1
-                Pne_a = np.array(pre_pv1) + np.array(pre_wind1)
-                Pes_a = pre_es1
-                Pch_a = np.zeros([len(p_past_es1)])
-                Pdis_a = np.zeros([len(p_past_es1)])
-                for i in range(0, len(p_past_es1)):
-                    if p_past_es1[i] >= 0:
-                        Pdis_a[i] = p_past_es1[i]
-                    else:
-                        Pch_a[i] = p_past_es1[i]
-                # -------------------------------已调整----------------------------------------
-                Pre_load_a = np.array(p_past_load1)  # 实际负荷出力数据--采集输入
-                Pre_ne_a = np.array(p_past_ne1)  # 实际新能源出力数据--采集输入
-
-                e_past_sell, e_past_buy = get_dianliang()
-                Psell_a = np.array(e_past_sell)
-                Pbuy_a = np.array(e_past_buy)
-                # -------------------------------已调整----------------------------------------
-                Pch_re_a = np.zeros([len(p_past_es1)])
-                Pdis_re_a = np.zeros([len(p_past_es1)])
-                for i in range(0, len(p_past_es1)):
-                    if p_past_es1[i] >= 0:
-                        Pch_re_a[i] = p_past_es1[i]
-                    else:
-                        Pdis_re_a[i] = -p_past_es1[i]
-                SOC_a = SOC1
-
-                loadA_Input = list()
-                powerA_Input = list()
-                for inds in range(0, 96):
-                    if inds <= my_end_inds:
-                        loadA_Input.append(p_past_load1[inds])
-                        powerA_Input.append(p_past_ne1[inds])
-                    else:
-                        loadA_Input.append(pre_load1[inds])
-                        powerA_Input.append(pre_ne1[inds])
-
-                optInputA = [loadA_Input, powerA_Input, SOC_a[0] / 100]
-                [P_Be_a, P_out_a] = cal_a(Pload_a, Pne_a, Pch_a, Pdis_a, Pre_load_a, Pre_ne_a, SOC_a, Pch_re_a,
-                                          Pdis_re_a, Psell_a, Pbuy_a, c1, Pres, Eres, Pes_a, B, optTarget, optInputA)
-                st = time.time()
-                post_ctrresult(P_Be_a, outid_list[modelIndex][0])
-                print('写数耗时', time.time() - st)
-            if optObject == '2#储能':
-                '''预测数据'''
-                predatas = get_today_pre(modelIndex)
-                # 以下分别为2区预测负荷、光伏出力、储能功率（正为放电、负为充电），均为list类型，长度96
-                pre_load2 = predatas[4]
-                pre_pv2 = predatas[5]
-                pre_es2 = predatas[6]
-
-                '''# 分区2输入'''
-                Pload_b = pre_load2
-                Pne_b = pre_pv2
-                Pes_b = pre_es2
-                Pch_b = np.zeros([len(p_past_es2)])
-                Pdis_b = np.zeros([len(p_past_es2)])
-                for i in range(0, len(p_past_es2)):
-                    if p_past_es2[i] >= 0:
-                        Pdis_b[i] = p_past_es2[i]
-                    else:
-                        Pch_b[i] = p_past_es2[i]
-                # -------------------------------已调整----------------------------------------
-                Pre_load_b = np.array(p_past_load2)  # 实际负荷出力数据--采集输入
-                Pre_ne_b = np.array(p_past_ne2)  # 实际新能源出力数据--采集输入
-
-                e_past_sell, e_past_buy = get_dianliang()
-                Psell_b = np.array(e_past_sell)
-                Pbuy_b = np.array(e_past_buy)
-                # -------------------------------已调整----------------------------------------
-                Pch_re_b = np.zeros([len(p_past_es2)])
-                Pdis_re_b = np.zeros([len(p_past_es2)])
-                for i in range(0, len(p_past_es1)):
-                    if p_past_es1[i] >= 0:
-                        Pch_re_b[i] = p_past_es2[i]
-                    else:
-                        Pdis_re_b[i] = -p_past_es2[i]
-                SOC_b = SOC2
-
-                loadB_Input = list()
-                powerB_Input = list()
-                for inds in range(0, 96):
-                    if inds <= my_end_inds:
-                        loadB_Input.append(p_past_load2[inds])
-                        powerB_Input.append(p_past_ne2[inds])
-                    else:
-                        loadB_Input.append(pre_load2[inds])
-                        powerB_Input.append(pre_pv2[inds])
-
-                optInputB = [loadB_Input, powerB_Input, SOC_b[0] / 100]
-                [P_Be_b, P_out_b] = cal_b(Pload_b, Pne_b, Pch_b, Pdis_b, Pre_load_b, Pre_ne_b, SOC_b, Pch_re_b,
-                                          Pdis_re_b, Psell_b, Pbuy_b, c1, Pres, Eres, Pes_b, B,
-                                          optTarget, optInputB)
-                st = time.time()
-                post_ctrresult(P_Be_b, outid_list[modelIndex][1])
-                print('写数耗时', time.time() - st)
-            if optObject == '全选':
-                '''预测数据'''
-                predatas = get_today_pre(modelIndex)
-                # 以下分别为1区预测负荷、光伏出力、风机出力、储能功率（正为放电、负为充电），均为list类型，长度96
-                pre_load1 = predatas[0] #166
-                pre_pv1 = predatas[1] #0
-                pre_wind1 = predatas[2] #0
-                pre_es1 = predatas[3] #-250
-                pre_ne1 = optimization_main.myplusfunc([pre_pv1, pre_wind1])
-                # 以下分别为2区预测负荷、光伏出力、储能功率（正为放电、负为充电），均为list类型，长度96
-                pre_load2 = predatas[4] #221
-                pre_pv2 = predatas[5] #0
-                pre_es2 = predatas[6] #250
-
-                '''# 分区1输入'''
-                Pload_a = pre_load1
-                Pne_a = np.array(pre_pv1) + np.array(pre_wind1)
-                Pes_a = pre_es1
-                # 怀疑这个是预测值 pre_es1
-                Pch_a = np.zeros([len(pre_es1)])
-                Pdis_a = np.zeros([len(pre_es1)])
-                for i in range(0, len(pre_es1)):
-                    if pre_es1[i] >= 0:
-                        Pdis_a[i] = pre_es1[i]
-                    else:
-                        Pch_a[i] = pre_es1[i]
-                # -------------------------------已调整----------------------------------------
-                Pre_load_a = np.array(p_past_load1)  # 实际负荷出力数据--采集输入
-                Pre_ne_a = np.array(p_past_ne1)  # 实际新能源出力数据--采集输入
-
-                e_past_sell, e_past_buy = get_dianliang()
-                Psell_a = np.array(e_past_sell)
-                Pbuy_a = np.array(e_past_buy)
-                # -------------------------------已调整----------------------------------------
-                Pch_re_a = np.zeros([len(p_past_es1)])
-                Pdis_re_a = np.zeros([len(p_past_es1)])
-                for i in range(0, len(p_past_es1)):
-                    if p_past_es1[i] >= 0:
-                        Pdis_re_a[i] = p_past_es1[i]
-                    else:
-                        Pch_re_a[i] = -p_past_es1[i]
-                SOC_a = SOC1
-                '''# 分区2输入'''
-                Pload_b = pre_load2
-                Pne_b = pre_pv2
-                Pes_b = pre_es2
-                Pch_b = np.zeros([len(pre_es2)])
-                Pdis_b = np.zeros([len(pre_es2)])
-                for i in range(0, len(pre_es2)):
-                    if pre_es2[i] >= 0:
-                        Pdis_b[i] = pre_es2[i]
-                    else:
-                        Pch_b[i] = pre_es2[i]
-                # -------------------------------已调整----------------------------------------
-                Pre_load_b = np.array(p_past_load2)  # 实际负荷出力数据--采集输入
-                Pre_ne_b = np.array(p_past_ne2)  # 实际新能源出力数据--采集输入
-
-                Psell_b = np.array(e_past_sell)
-                Pbuy_b = np.array(e_past_buy)
-                # -------------------------------已调整----------------------------------------
-                Pch_re_b = np.zeros([len(p_past_es2)])
-                Pdis_re_b = np.zeros([len(p_past_es2)])
-                for i in range(0, len(p_past_es2)):
-                    if p_past_es2[i] >= 0:
-                        Pdis_re_b[i] = p_past_es2[i]
-                    else:
-                        Pch_re_b[i] = -p_past_es2[i]
-                SOC_b = SOC2
-
-                loadA_Input = list()
-                powerA_Input = list()
-                loadB_Input = list()
-                powerB_Input = list()
-                for inds in range(0, 96):
-                    if inds <= my_end_inds:
-                        loadA_Input.append(p_past_load1[inds])
-                        powerA_Input.append(p_past_ne1[inds])
-                        loadB_Input.append(p_past_load2[inds])
-                        powerB_Input.append(p_past_ne2[inds])
-                    else:
-                        loadA_Input.append(pre_load1[inds])
-                        powerA_Input.append(pre_ne1[inds])
-                        loadB_Input.append(pre_load2[inds])
-                        powerB_Input.append(pre_pv2[inds])
-                # print('inputlength', len(loadA_Input), len(powerA_Input))
-                optInputA = [loadA_Input, powerA_Input, SOC_a[0] / 100]
-                tmp_soc_a = list(map(lambda x: x/100, SOC_a))
-                [P_Be_a, P_out_a] = cal_a(Pload_a, Pne_a, Pch_a, Pdis_a, Pre_load_a, Pre_ne_a, tmp_soc_a, Pch_re_a, #pre pre real real
-                                          Pdis_re_a, Psell_a, Pbuy_a, c1, Pres, Eres, Pes_a, B, optTarget,
-                                          optInputA)
-                optInputB = [loadB_Input, powerB_Input, SOC_b[0] / 100]
-                tmp_soc_b = list(map(lambda x: x / 100, SOC_b))
-                [P_Be_b, P_out_b] = cal_b(Pload_b, Pne_b, Pch_b, Pdis_b, Pre_load_b, Pre_ne_b, tmp_soc_b, Pch_re_b,
-                                          Pdis_re_b, Psell_b, Pbuy_b, c1, Pres, Eres, Pes_b, B,
-                                          optTarget, optInputB)
-                st = time.time()
-                post_ctrresult_all(P_Be_a, P_Be_b, outid_list[modelIndex][0], outid_list[modelIndex][1])
-                print('写数耗时', time.time() - st)
+        # 更新 根据不同区域计算更新储能控制策略
+        if optObject == '1#储能':
+            [P_Be_a, P_out_a] = start_func(pre_load1, pre_ne1, pre_es1, input_time_main, minute_div, SOC1, my_end_inds,
+                       p_past_load1, p_past_ne1, p_past_es1, c1, Pres, Eres, B, optTarget)
+            N1_cost1_opt, N1_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_a).clip(-500, 0),
+                                                 np.array(P_Be_a).clip(0, 500))
+            post_result_1([N1_cost1_opt, N1_cost2_opt],
+                          my_end_inds, out_2_id_list[modelIndex][::2])
+            st = time.time()
+            post_ctrresult(P_Be_a, outid_list[modelIndex][0])
+            print('写数耗时', time.time() - st)
+        if optObject == '2#储能':
+            [P_Be_b, P_out_b] = start_func(pre_load2, pre_pv2, pre_es2, input_time_main, minute_div, SOC2, my_end_inds,
+                       p_past_load2, p_past_ne2, p_past_es2, c1, Pres, Eres, B, optTarget)
+            N2_cost1_opt, N2_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_b).clip(-500, 0),
+                                                 np.array(P_Be_b).clip(0, 500))
+            post_result_1([N2_cost1_opt, N2_cost2_opt],
+                          my_end_inds, out_2_id_list[modelIndex][1::2])
+            st = time.time()
+            post_ctrresult(P_Be_b, outid_list[modelIndex][1])
+            print('写数耗时', time.time() - st)
+        if optObject == '全选':
+            [P_Be_a, P_out_a] = start_func(pre_load1, pre_ne1, pre_es1, input_time_main, minute_div, SOC1, my_end_inds,
+                       p_past_load1, p_past_ne1, p_past_es1, c1, Pres, Eres, B, optTarget)
+            [P_Be_b, P_out_b] = start_func(pre_load2, pre_pv2, pre_es2, input_time_main, minute_div, SOC2, my_end_inds,
+                       p_past_load2, p_past_ne2, p_past_es2, c1, Pres, Eres, B, optTarget)
+            N1_cost1_opt, N1_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_a).clip(-500, 0),
+                                                 np.array(P_Be_a).clip(0, 500))
+            N2_cost1_opt, N2_cost2_opt = env_sim(p_past_load1, p_past_ne1, c1, -1 * np.array(P_Be_b).clip(-500, 0),
+                                                 np.array(P_Be_b).clip(0, 500))
+            post_result_1([N1_cost1_opt, N2_cost1_opt, N1_cost2_opt, N2_cost2_opt],
+                          my_end_inds, out_2_id_list[modelIndex])
+            st = time.time()
+            post_ctrresult_all(P_Be_a, P_Be_b, outid_list[modelIndex][0], outid_list[modelIndex][1])
+            print('写数耗时', time.time() - st)
         logger.info('完成一个模型计算')
     print('一轮耗时=', time.time() - sttime)
     logger.info('本轮计算结束')
